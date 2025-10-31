@@ -4,7 +4,7 @@ from pathlib import Path
 # CORE PATHS
 BASE_DIR = Path(__file__).resolve().parent.parent
 RAW_DATA_DIR = BASE_DIR / "data" / "raw"
-RAW_DATA_PATH = RAW_DATA_DIR / "personal_finance.csv"
+RAW_DATA_PATH = RAW_DATA_DIR / "personal_finance_dataset.csv"
 PROCESSED_DATA_DIR = BASE_DIR / "data" / "processed"
 PLOTS_DIR = BASE_DIR / "outputs" / "plots"
 TABLES_DIR = BASE_DIR / "outputs" / "tables"
@@ -19,7 +19,7 @@ TEST_PATH = PROCESSED_DATA_DIR / "test.csv"
 RANDOM_STATE = 42
 TEST_SIZE = 0.2
 VAL_SIZE = 0.2
-KAGGLE_DATASET = "zusmani/personal-finance-ml-dataset"
+KAGGLE_DATASET = "miadul/personal-finance-ml-dataset"
 
 # TARGET VARIABLES
 TARGET_CLASSIFICATION = "has_loan"

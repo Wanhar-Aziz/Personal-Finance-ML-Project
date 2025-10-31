@@ -15,7 +15,7 @@ def download_dataset():
     """Downloads the latest version of the Kaggle dataset using kagglehub."""
     path = dataset_download(KAGGLE_DATASET)
     print("Path to dataset files:", path)
-    df = pd.read_csv(f"{path}/personal_finance_dataset.csv")
+    df = pd.read_csv(f"{path}/synthetic_personal_finance_dataset.csv")
     RAW_DATA_DIR.mkdir(parents=True, exist_ok=True)
     df.to_csv(RAW_DATA_PATH, index=False)
     print(f"Dataset saved to {RAW_DATA_PATH}")
@@ -33,8 +33,11 @@ def clean_data(df):
 
 def split_data(df):
     """Splits the dataset reproducibly into train, validation, and test."""
-    train_df, test_df = train_test_split(df, test_size=TEST_SIZE, random_state=RANDOM_STATE)
-    train_df, val_df = train_test_split(train_df, test_size=VAL_SIZE, random_state=RANDOM_STATE)
+    train_val_df, test_df = train_test_split(df, test_size=TEST_SIZE, random_state=RANDOM_STATE)
+
+    val_proportion = VAL_SIZE / (1 - TEST_SIZE)
+
+    train_df, val_df = train_test_split(train_val_df, test_size=val_proportion, random_state=RANDOM_STATE)
     
     train_df.to_csv(PROCESSED_DATA_DIR / "train.csv", index=False)
     val_df.to_csv(PROCESSED_DATA_DIR / "val.csv", index=False)
