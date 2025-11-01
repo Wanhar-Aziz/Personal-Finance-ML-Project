@@ -213,3 +213,7 @@ mlruns/
 __pycache__/
 *.pyc
 *.log
+
+# MacOS
+.DS_Store
+*.DS_Store

@@ -34,3 +34,16 @@ os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
 os.makedirs(PLOTS_DIR, exist_ok=True)
 os.makedirs(TABLES_DIR, exist_ok=True)
 os.makedirs(REPORTS_DIR, exist_ok=True)
+
+# FEATURE ENGINEERING & SELECTION
+CATEGORICAL_FEATURES = ['gender', 'education_level', 'employment_status', 'job_title', 'region']
+DROP_FEATURES = ['user_id', 'record_date']
+
+# Features to remove for classification due to data leakage
+CLASSIFICATION_DROP_COLS = [
+    'loan_amount_usd', 'loan_term_months', 'monthly_emi_usd', 
+    'loan_interest_rate_pct', 'loan_type', 'debt_to_income_ratio'
+]
+
+# Features to remove for regression (only loan_type due to its high missingness before imputation)
+REGRESSION_DROP_COLS = ['loan_type']

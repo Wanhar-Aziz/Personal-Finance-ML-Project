@@ -1,10 +1,30 @@
 import argparse
 from pathlib import Path
+import logging
 
-from src.config import RAW_DATA_PATH
-from src.data_processing import clean_data, download_dataset, load_data, split_data
+from src.data_processing import clean_data, download_dataset, load_data, split_data, engineer_features
+from src.train_baselines import main as train_baselines_main
+from src.evaluate import main as evaluate_main
 from src.report import generate_report
+from src.config import RAW_DATA_PATH
 
+# TODO: Configure logging more granularly in each module
+# TODO: Move logging configuration to a dedicated logging module
+# TODO: Improve documentation throughout the codebase
+# TODO: Add type hints throughout the codebase
+# TODO: Avoid monolithic functions; break into smaller functions where appropriate
+# TODO: Improve report generation with more insights and visualizations
+# TODO: move pkl files to a more appropriate location (maybe artifacts/ or models/)
+# TODO: Ensure MLflow runs are properly tagged and organized
+# TODO: Confirm that data processing handles all edge cases in the dataset
+# TODO: Check outliers handling in data cleaning
+# TODO: streamline the pipeline for efficiency
+# TODO: Implement model improvement strategies such as hyperparameter tuning
+# IDEAS: Add command-line arguments for more pipeline options
+
+# NEED: Add standard deviation for metrics where applicable
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def ensure_dataset(force_download: bool) -> Path:
     """
@@ -27,9 +47,12 @@ def ensure_dataset(force_download: bool) -> Path:
 
 def run_pipeline(force_download: bool = False, run_eda: bool = False) -> None:
     """Execute the end-to-end data preparation pipeline with optional EDA visuals."""
+    logging.info("--- STAGE 1: DATA PREPARATION ---")
+
     ensure_dataset(force_download=force_download)
 
     df = clean_data(load_data())
+    df = engineer_features(df)
     train_df, val_df, test_df = split_data(df)
 
     if run_eda:
@@ -43,12 +66,20 @@ def run_pipeline(force_download: bool = False, run_eda: bool = False) -> None:
     else:
         print("Skipping EDA visualizations. Use --run-eda to enable.")
 
+    logging.info(f"Total rows: {len(df)}")
+    logging.info(f"Train rows: {len(train_df)} | Validation rows: {len(val_df)} | Test rows: {len(test_df)}")
+    logging.info("Processed data saved to data/processed/. Visuals and reports saved under outputs/.")
+
+    logging.info("--- STAGE 2: TRAINING BASELINE MODELS ---")
+    train_baselines_main()
+
+    logging.info("--- STAGE 3: FINAL EVALUATION ---")
+    evaluate_main()
+
+    logging.info("--- STAGE 4: REPORT GENERATION ---")
     generate_report()
 
-    print("Pipeline complete.")
-    print(f"Total rows: {len(df)}")
-    print(f"Train rows: {len(train_df)} | Validation rows: {len(val_df)} | Test rows: {len(test_df)}")
-    print("Processed data saved to data/processed/. Visuals and reports saved under outputs/.")
+    logging.info("Pipeline complete.")
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
