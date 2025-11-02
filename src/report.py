@@ -45,6 +45,7 @@ def _build_report_elements() -> list:
         # Only 4 decimal places for "value" column
         for i in range(1, len(table_data)):
             table_data[i][1] = f"{table_data[i][1]:.4f}"
+            table_data[i][2] = f"{table_data[i][2]:.4f}"
 
         table = Table(table_data, colWidths=[2 * inch, 1 * inch])
         table.setStyle(TableStyle([
@@ -74,9 +75,10 @@ def _build_report_elements() -> list:
         df_reg = pd.read_csv(reg_table_path)
         table_data = [df_reg.columns.to_list()] + df_reg.values.tolist()
 
-        # Only 4 decimal places for "value" column
+        # Only 2 decimal places for "value" column
         for i in range(1, len(table_data)):
-            table_data[i][1] = f"{table_data[i][1]:.4f}"
+            table_data[i][1] = f"{table_data[i][1]:.2f}"
+            table_data[i][2] = f"{table_data[i][2]:.2f}"
             
         table = Table(table_data, colWidths=[2 * inch, 1.5 * inch])
         table.setStyle(TableStyle([
