@@ -81,9 +81,13 @@ This project uses a virtual environment to manage dependencies.
     .\venv\Scripts\activate
     ```
 
-3.  **Install Dependencies:**
+3.  **Install Dependencies and the Project Package:**
     ```bash
+    # Install all required libraries
     pip install -r requirements.txt
+    
+    # Install the project's src/ folder as an editable package
+    pip install -e .
     ```
 ---
 
