@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "personal_finance_ml"
+version = "0.1.0"
+description = "A machine learning pipeline for the CS-4120 course project."
+authors = [
+    {name = "Wanhar Aziz"},
+    {name = "Jonathan Zul Luna"},
+]
+requires-python = ">=3.9"
+
+[tool.setuptools.packages.find]
+where = ["src"]
