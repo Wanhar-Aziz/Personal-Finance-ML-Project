@@ -1,7 +1,3 @@
-import pathlib
-import sys
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-
 from src.data_processing import load_data, clean_data
 
 if __name__ == "__main__":

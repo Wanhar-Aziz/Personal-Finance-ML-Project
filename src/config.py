@@ -4,7 +4,7 @@ from pathlib import Path
 # CORE PATHS
 BASE_DIR = Path(__file__).resolve().parent.parent
 RAW_DATA_DIR = BASE_DIR / "data" / "raw"
-RAW_DATA_PATH = RAW_DATA_DIR / "personal_finance_dataset.csv"
+RAW_DATA_PATH = RAW_DATA_DIR / "synthetic_personal_finance_dataset.csv"
 PROCESSED_DATA_DIR = BASE_DIR / "data" / "processed"
 PLOTS_DIR = BASE_DIR / "outputs" / "plots"
 TABLES_DIR = BASE_DIR / "outputs" / "tables"
@@ -27,13 +27,6 @@ TARGET_REGRESSION = "credit_score"
 
 # MLFLOW CONFIG
 MLFLOW_EXPERIMENT_NAME = "personal-finance-baselines"
-
-# Ensure output directories exist
-os.makedirs(RAW_DATA_DIR, exist_ok=True)
-os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
-os.makedirs(PLOTS_DIR, exist_ok=True)
-os.makedirs(TABLES_DIR, exist_ok=True)
-os.makedirs(REPORTS_DIR, exist_ok=True)
 
 # FEATURE ENGINEERING & SELECTION
 CATEGORICAL_FEATURES = ['gender', 'education_level', 'employment_status', 'job_title', 'region']

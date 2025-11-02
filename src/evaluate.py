@@ -1,4 +1,3 @@
-# In src/evaluate.py
 import logging
 
 import pandas as pd
@@ -16,107 +15,100 @@ from src.config import (
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-def main():
+def _evaluate_best_pipeline(
+    task_type: str,
+    X_test: pd.DataFrame,
+    y_test: pd.Series,
+    filter_string: str,
+    order_by: str
+) -> None:
+    """Finds the best pipeline in MLflow for a task, evaluates it, and saves artifacts.
+    
+    Args:
+        task_type: 'classification' or 'regression'.
+        X_test: Test feature DataFrame.
+        y_test: Test target Series.
+        filter_string: MLflow filter string to find relevant runs.
+        order_by: MLflow order_by string to sort runs.
+    Returns:
+        None
     """
-    Loads the best pipeline from MLflow for each task, evaluates it on the test set,
-    and saves the final artifacts.
-    """
-    logging.info("--- Starting Final Evaluation on Test Set ---")
+    logging.info(f"Evaluating best {task_type} pipeline...")
+    
+    # Find the best run based on the specified validation metric
+    best_runs = mlflow.search_runs(
+        experiment_names=[MLFLOW_EXPERIMENT_NAME],
+        filter_string=filter_string,
+        order_by=[order_by],
+        max_results=1
+    )
 
-    # Load test data and prepare targets
+    if best_runs.empty:
+        logging.warning(f"No {task_type} models found. Skipping.")
+        return
+
+    best_run_id = best_runs.iloc[0]["run_id"]
+    model_name = best_runs.iloc[0]['tags.mlflow.runName'].split('_')[0]
+    model_uri = f"runs:/{best_run_id}/{model_name}"
+    
+    logging.info(f"Loading best {task_type} pipeline from run: {best_run_id}")
+    best_pipeline = mlflow.sklearn.load_model(model_uri)
+    
+    y_pred_test = best_pipeline.predict(X_test)
+    
+    if task_type == "classification":
+        accuracy = accuracy_score(y_test, y_pred_test)
+        f1 = f1_score(y_test, y_pred_test, average='weighted')
+        logging.info(f"  Test Accuracy: {accuracy:.4f}, Test F1-Score: {f1:.4f}")
+        
+        metrics_df = pd.DataFrame({"Metric": ["Accuracy", "F1-Score"], "Value": [accuracy, f1]})
+        metrics_df.to_csv(TABLES_DIR / "classification_test_metrics.csv", index=False)
+        
+        cm = confusion_matrix(y_test, y_pred_test)
+        plt.figure(figsize=(8, 6))
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=['No', 'Yes'], yticklabels=['No', 'Yes'])
+        plt.title('Confusion Matrix on Test Set'); plt.xlabel('Predicted'); plt.ylabel('Actual')
+        plt.savefig(PLOTS_DIR / "confusion_matrix.png"); plt.close()
+    
+    elif task_type == "regression":
+        mae = mean_absolute_error(y_test, y_pred_test)
+        rmse = root_mean_squared_error(y_test, y_pred_test)
+        logging.info(f"  Test MAE: {mae:.4f}, Test RMSE: {rmse:.4f}")
+        
+        metrics_df = pd.DataFrame({"Metric": ["MAE", "RMSE"], "Value": [mae, rmse]})
+        metrics_df.to_csv(TABLES_DIR / "regression_test_metrics.csv", index=False)
+        
+        residuals = y_test - y_pred_test
+        plt.figure(figsize=(8, 6))
+        plt.scatter(y_pred_test, residuals, alpha=0.5)
+        plt.axhline(y=0, color='r', linestyle='--')
+        plt.title('Residuals vs. Predicted Values on Test Set'); plt.xlabel('Predicted'); plt.ylabel('Residuals')
+        plt.savefig(PLOTS_DIR / "residuals_plot.png"); plt.close()
+
+def main():
+    """Loads test data and runs the evaluation of the best models."""
+    # --- 1. Load Data ---
     test_df = pd.read_csv(TEST_PATH)
     test_df[TARGET_CLASSIFICATION] = test_df[TARGET_CLASSIFICATION].map({'Yes': 1, 'No': 0})
     
+    X_test = test_df.drop(columns=DROP_FEATURES + [TARGET_CLASSIFICATION, TARGET_REGRESSION])
     y_test_clf = test_df[TARGET_CLASSIFICATION]
     y_test_reg = test_df[TARGET_REGRESSION]
-    X_test = test_df.drop(columns=DROP_FEATURES + [TARGET_CLASSIFICATION, TARGET_REGRESSION])
 
     mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
 
-    # --- 1. Evaluate Best Classification Model ---
-    logging.info("Evaluating best classification pipeline...")
-    # Find the best run by looking for the highest validation F1 score
-    best_clf_runs = mlflow.search_runs(
-        experiment_names=[MLFLOW_EXPERIMENT_NAME],
+    # --- 2. Evaluate Models using the Helper Function ---
+    _evaluate_best_pipeline(
+        task_type="classification", X_test=X_test, y_test=y_test_clf,
         filter_string="params.model_type = 'classification'",
-        order_by=["metrics.val_f1_score DESC"],
-        max_results=1
+        order_by="metrics.val_f1_score DESC"
     )
-
-    if best_clf_runs.empty:
-        logging.warning("No classification models found. Skipping.")
-    else:
-        best_clf_run_id = best_clf_runs.iloc[0]["run_id"]
-        model_name = best_clf_runs.iloc[0]['tags.mlflow.runName'].split('_')[0]
-        model_uri = f"runs:/{best_clf_run_id}/{model_name}"
-        
-        logging.info(f"Loading best classification pipeline from run: {best_clf_run_id}")
-        best_clf_pipeline = mlflow.sklearn.load_model(model_uri)
-        
-        # Make predictions on raw test data
-        y_pred_test_clf = best_clf_pipeline.predict(X_test)
-        
-        # Calculate and log metrics
-        test_accuracy = accuracy_score(y_test_clf, y_pred_test_clf)
-        test_f1 = f1_score(y_test_clf, y_pred_test_clf, average='weighted')
-        
-        logging.info(f"  Test Accuracy: {test_accuracy:.4f}")
-        logging.info(f"  Test F1-Score: {test_f1:.4f}")
-        
-        # Save metrics table and confusion matrix plot
-        clf_metrics = pd.DataFrame({"Metric": ["Accuracy", "F1-Score"], "Value": [test_accuracy, test_f1]})
-        clf_metrics.to_csv(TABLES_DIR / "classification_test_metrics.csv", index=False)
-        
-        cm = confusion_matrix(y_test_clf, y_pred_test_clf)
-        plt.figure(figsize=(8, 6))
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=['No', 'Yes'], yticklabels=['No', 'Yes'])
-        plt.title('Confusion Matrix on Test Set')
-        plt.xlabel('Predicted'); plt.ylabel('Actual')
-        plt.savefig(PLOTS_DIR / "confusion_matrix.png")
-        plt.close()
-
-    # --- 2. Evaluate Best Regression Model ---
-    logging.info("Evaluating best regression pipeline...")
-    # Find the best run by looking for the lowest validation RMSE
-    best_reg_runs = mlflow.search_runs(
-        experiment_names=[MLFLOW_EXPERIMENT_NAME],
+    
+    _evaluate_best_pipeline(
+        task_type="regression", X_test=X_test, y_test=y_test_reg,
         filter_string="params.model_type = 'regression'",
-        order_by=["metrics.val_rmse ASC"],
-        max_results=1
+        order_by="metrics.val_rmse ASC"
     )
-
-    if best_reg_runs.empty:
-        logging.warning("No regression models found. Skipping.")
-    else:
-        best_reg_run_id = best_reg_runs.iloc[0]["run_id"]
-        model_name = best_reg_runs.iloc[0]['tags.mlflow.runName'].split('_')[0]
-        model_uri = f"runs:/{best_reg_run_id}/{model_name}"
-
-        logging.info(f"Loading best regression pipeline from run: {best_reg_run_id}")
-        best_reg_pipeline = mlflow.sklearn.load_model(model_uri)
-        
-        # Make predictions on raw test data
-        y_pred_test_reg = best_reg_pipeline.predict(X_test)
-        
-        # Calculate and log metrics
-        test_mae = mean_absolute_error(y_test_reg, y_pred_test_reg)
-        test_rmse = root_mean_squared_error(y_test_reg, y_pred_test_reg)
-        
-        logging.info(f"  Test MAE: {test_mae:.4f}")
-        logging.info(f"  Test RMSE: {test_rmse:.4f}")
-
-        # Save metrics table and residuals plot
-        reg_metrics = pd.DataFrame({"Metric": ["MAE", "RMSE"], "Value": [test_mae, test_rmse]})
-        reg_metrics.to_csv(TABLES_DIR / "regression_test_metrics.csv", index=False)
-        
-        residuals = y_test_reg - y_pred_test_reg
-        plt.figure(figsize=(8, 6))
-        plt.scatter(y_pred_test_reg, residuals, alpha=0.5)
-        plt.axhline(y=0, color='r', linestyle='--')
-        plt.title('Residuals vs. Predicted Values on Test Set')
-        plt.xlabel('Predicted Credit Score'); plt.ylabel('Residuals')
-        plt.savefig(PLOTS_DIR / "residuals_plot.png")
-        plt.close()
 
     logging.info("--- Final Evaluation Complete ---")
 

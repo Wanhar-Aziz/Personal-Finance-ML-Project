@@ -1,6 +1,3 @@
-import sys, pathlib
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-
 from src.data_processing import download_dataset, load_data, clean_data, split_data
 
 if __name__ == "__main__":
