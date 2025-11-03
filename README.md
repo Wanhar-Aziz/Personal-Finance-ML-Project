@@ -118,8 +118,8 @@ python src/main.py --force-download
 The full pipeline will:
 1.  **Automatically download** the dataset from Kaggle and save it to `data/raw/`.
 2.  Process the raw data and save train, validation, and test sets to `data/processed/`.
-3.  (Soon) Train the classical baseline models and log results to MLflow.
-4.  (Soon) Evaluate the best models and save artifacts to `outputs/`.
+3.  Train the classical baseline models and log results to MLflow.
+4.  Evaluate the best models and save artifacts to `outputs/`.
 5.  **Generate a PDF report** summarizing the data processing steps.
 
 ---
